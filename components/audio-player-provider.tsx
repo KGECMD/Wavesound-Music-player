@@ -9,6 +9,7 @@ interface AudioPlayerContextType {
   progress: number
   duration: number
   volume: number
+  isLoading: boolean
   play: (track: Track) => void
   pause: () => void
   resume: () => void
@@ -30,6 +31,7 @@ export function useAudioPlayer() {
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolumeState] = useState(0.7)
@@ -38,6 +40,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     audioRef.current = new Audio()
     audioRef.current.volume = volume
+    audioRef.current.crossOrigin = 'anonymous'
 
     const audio = audioRef.current
 
@@ -46,7 +49,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     }
 
     const handleDurationChange = () => {
-      setDuration(audio.duration)
+      setDuration(audio.duration || 0)
     }
 
     const handleEnded = () => {
@@ -54,29 +57,57 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setProgress(0)
     }
 
+    const handleCanPlay = () => {
+      setIsLoading(false)
+    }
+
+    const handleWaiting = () => {
+      setIsLoading(true)
+    }
+
+    const handleError = () => {
+      setIsLoading(false)
+      setIsPlaying(false)
+      console.error('Audio playback error')
+    }
+
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('durationchange', handleDurationChange)
     audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('canplay', handleCanPlay)
+    audio.addEventListener('waiting', handleWaiting)
+    audio.addEventListener('error', handleError)
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('durationchange', handleDurationChange)
       audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('canplay', handleCanPlay)
+      audio.removeEventListener('waiting', handleWaiting)
+      audio.removeEventListener('error', handleError)
       audio.pause()
     }
   }, [])
 
   const play = useCallback((track: Track) => {
-    if (!audioRef.current || !track.previewUrl) return
-
-    if (currentTrack?.id !== track.id) {
-      audioRef.current.src = track.previewUrl
-      setCurrentTrack(track)
-      setProgress(0)
+    if (!audioRef.current) return
+    
+    // Audius tracks have streamUrl
+    if (track.source === 'audius' && track.streamUrl) {
+      if (currentTrack?.id !== track.id) {
+        setIsLoading(true)
+        audioRef.current.src = track.streamUrl
+        setCurrentTrack(track)
+        setProgress(0)
+        setDuration(track.duration || 0)
+      }
+      
+      audioRef.current.play().catch((err) => {
+        console.error('Play error:', err)
+        setIsLoading(false)
+      })
+      setIsPlaying(true)
     }
-
-    audioRef.current.play()
-    setIsPlaying(true)
   }, [currentTrack?.id])
 
   const pause = useCallback(() => {
@@ -85,7 +116,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const resume = useCallback(() => {
-    audioRef.current?.play()
+    audioRef.current?.play().catch(console.error)
     setIsPlaying(true)
   }, [])
 
@@ -116,6 +147,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       value={{
         currentTrack,
         isPlaying,
+        isLoading,
         progress,
         duration,
         volume,

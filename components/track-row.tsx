@@ -26,9 +26,10 @@ export function TrackRow({ track, index, showArtwork = true }: TrackRowProps) {
   const { isFavorite, toggleFavorite } = useFavorites()
 
   const isCurrentTrack = currentTrack?.id === track.id
+  const canPlay = track.source === 'audius' && track.streamUrl
 
   const handlePlayClick = () => {
-    if (!track.previewUrl) return
+    if (!canPlay) return
 
     if (isCurrentTrack && isPlaying) {
       pause()
@@ -45,30 +46,35 @@ export function TrackRow({ track, index, showArtwork = true }: TrackRowProps) {
       )}
     >
       {/* Track Number / Play Button */}
-      <div className="w-8 flex-shrink-0 text-center">
-        {track.previewUrl ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePlayClick}
-            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            {isCurrentTrack && isPlaying ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4 ml-0.5" />
-            )}
-          </Button>
-        ) : null}
-        <span
-          className={cn(
-            'text-sm text-muted-foreground',
-            track.previewUrl && 'group-hover:hidden',
-            isCurrentTrack && 'text-primary'
-          )}
-        >
-          {index !== undefined ? index + 1 : track.trackNumber}
-        </span>
+      <div className="w-8 flex-shrink-0 text-center relative">
+        {canPlay ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePlayClick}
+              className="h-8 w-8 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              {isCurrentTrack && isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4 ml-0.5" />
+              )}
+            </Button>
+            <span
+              className={cn(
+                'text-sm text-muted-foreground group-hover:invisible',
+                isCurrentTrack && 'text-primary'
+              )}
+            >
+              {index !== undefined ? index + 1 : ''}
+            </span>
+          </>
+        ) : (
+          <span className="text-sm text-muted-foreground">
+            {index !== undefined ? index + 1 : ''}
+          </span>
+        )}
       </div>
 
       {/* Artwork */}
@@ -95,6 +101,13 @@ export function TrackRow({ track, index, showArtwork = true }: TrackRowProps) {
         </p>
         <p className="truncate text-sm text-muted-foreground">{track.artistName}</p>
       </div>
+
+      {/* Play count */}
+      {track.playCount !== undefined && (
+        <span className="hidden md:block text-sm text-muted-foreground flex-shrink-0">
+          {track.playCount.toLocaleString()} plays
+        </span>
+      )}
 
       {/* Favorite Button */}
       <Button

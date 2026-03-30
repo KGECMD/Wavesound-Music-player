@@ -20,20 +20,23 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
 
   const isCurrentTrack = currentTrack?.id === item.id
   const isTrack = item.type === 'track'
+  const canPlay = isTrack && item.source === 'audius' && item.streamUrl
 
   const track: Track = {
     id: item.id,
     name: item.name,
     artistName: item.artistName,
+    artistId: item.artistId || '',
     artworkUrl: item.artworkUrl,
-    previewUrl: item.previewUrl,
+    streamUrl: item.streamUrl,
     duration: item.duration,
+    source: item.source,
   }
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!item.previewUrl) return
+    if (!canPlay) return
 
     if (isCurrentTrack && isPlaying) {
       pause()
@@ -52,10 +55,8 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
     item.type === 'album'
       ? `/album/${item.id}`
       : item.type === 'artist'
-        ? `/artist/${item.id}`
-        : item.collectionId
-          ? `/album/${item.collectionId}`
-          : '#'
+        ? `/artist/${item.artistId || item.id}`
+        : `/artist/${item.artistId}`
 
   return (
     <Link href={href} className="group block">
@@ -71,7 +72,7 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
           />
 
           {/* Play Button Overlay */}
-          {isTrack && item.previewUrl && (
+          {canPlay && (
             <div
               className={cn(
                 'absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity duration-200',
@@ -100,6 +101,11 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
               <h3 className="truncate font-semibold text-foreground">{item.name}</h3>
               {showArtist && (
                 <p className="truncate text-sm text-muted-foreground">{item.artistName}</p>
+              )}
+              {item.playCount !== undefined && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {item.playCount.toLocaleString()} plays
+                </p>
               )}
             </div>
             {isTrack && (

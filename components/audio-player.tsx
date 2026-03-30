@@ -1,22 +1,27 @@
 'use client'
 
 import Image from 'next/image'
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import Link from 'next/link'
+import { Play, Pause, Volume2, VolumeX, ExternalLink } from 'lucide-react'
 import { useAudioPlayer } from './audio-player-provider'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 
 function formatTime(seconds: number): string {
+  if (!seconds || !isFinite(seconds)) return '0:00'
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
 export function AudioPlayer() {
-  const { currentTrack, isPlaying, progress, duration, volume, togglePlay, seek, setVolume } =
+  const { currentTrack, isPlaying, isLoading, progress, duration, volume, togglePlay, seek, setVolume } =
     useAudioPlayer()
 
   if (!currentTrack) return null
+
+  const trackDuration = duration || currentTrack.duration || 0
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-50">
@@ -34,8 +39,25 @@ export function AudioPlayer() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{currentTrack.name}</p>
-              <p className="truncate text-xs text-muted-foreground">{currentTrack.artistName}</p>
+              <Link 
+                href={`/artist/${currentTrack.artistId}`}
+                className="truncate text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                {currentTrack.artistName}
+              </Link>
             </div>
+            {/* Audius badge */}
+            {currentTrack.source === 'audius' && (
+              <a 
+                href={`https://audius.co/tracks/${currentTrack.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary">AUDIUS</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
           </div>
 
           {/* Player Controls */}
@@ -44,9 +66,16 @@ export function AudioPlayer() {
               variant="ghost"
               size="icon"
               onClick={togglePlay}
+              disabled={isLoading}
               className="h-10 w-10 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 transition-transform"
             >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+              {isLoading ? (
+                <Spinner className="h-5 w-5" />
+              ) : isPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5 ml-0.5" />
+              )}
             </Button>
             <div className="flex items-center gap-2 w-full">
               <span className="text-xs text-muted-foreground w-10 text-right">
@@ -54,13 +83,13 @@ export function AudioPlayer() {
               </span>
               <Slider
                 value={[progress]}
-                max={duration || 30}
+                max={trackDuration || 100}
                 step={0.1}
                 onValueChange={([value]) => seek(value)}
                 className="flex-1"
               />
               <span className="text-xs text-muted-foreground w-10">
-                {formatTime(duration || 30)}
+                {formatTime(trackDuration)}
               </span>
             </div>
           </div>
