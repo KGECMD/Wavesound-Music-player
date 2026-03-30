@@ -1,12 +1,4 @@
-# Wavesound-Music-player
-
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
-
-## Built with v0
-
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_Q9KG0k7LKGg0ia0QmeBtU1OK6xV3)
+please help with any bug fixes or any normalcode cehcking etc
 
 ## Getting Started
 
