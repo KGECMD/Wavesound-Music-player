@@ -58,8 +58,6 @@ const HOMEPAGE_QUERIES: Record<string, string> = {
 
 // ---------- HTTP core ----------
 
-type ApiEnvelope<T> = { version?: string; data?: T; items?: unknown[] }
-
 async function proxyFetch<T = unknown>(
   path: string,
   params: Record<string, string | number | undefined> = {},
@@ -78,12 +76,29 @@ async function proxyFetch<T = unknown>(
         next: { revalidate: 60 },
         headers: { Accept: 'application/json' },
       })
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[proxyFetch]', `${host}${suffix}`, '->', res.status)
+      }
       if (!res.ok) {
         lastErr = new Error(`${host}${suffix} → HTTP ${res.status}`)
         continue
       }
-      return (await res.json()) as T
+      const json = (await res.json()) as unknown
+      // Community HiFi proxies wrap payloads in { version, data }. Unwrap so
+      // callers can read fields off the actual payload directly.
+      if (
+        json &&
+        typeof json === 'object' &&
+        'data' in (json as Record<string, unknown>) &&
+        'version' in (json as Record<string, unknown>)
+      ) {
+        return (json as { data: T }).data as T
+      }
+      return json as T
     } catch (err) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[proxyFetch] ERR', `${host}${suffix}`, (err as Error).message)
+      }
       lastErr = err
     }
   }
@@ -330,21 +345,27 @@ export const getUndergroundTrending = async (limit = 15): Promise<MusicItem[]> =
 export async function getTrackInfo(id: string): Promise<Track | null> {
   const numericId = Number(id)
   if (!Number.isFinite(numericId)) return null
-  const data = await safeProxyFetch<ApiEnvelope<RawTrack>>('/info/', { id: numericId })
-  if (!data?.data) return null
-  return normalizeTrack(data.data)
+  const data = await safeProxyFetch<RawTrack>('/info/', { id: numericId })
+  if (!data) return null
+  return normalizeTrack(data)
 }
 
 export async function getAlbumById(id: string): Promise<Album | null> {
   const numericId = Number(id)
   if (!Number.isFinite(numericId)) return null
-  const data = await safeProxyFetch<ApiEnvelope<RawAlbum & { items?: RawTrack[] }>>(
-    '/album/',
-    { id: numericId, limit: 100 },
-  )
-  const album = data?.data
+  const album = await safeProxyFetch<
+    RawAlbum & { items?: Array<RawTrack | { item: RawTrack; type?: string }> }
+  >('/album/', { id: numericId, limit: 100 })
   if (!album) return null
-  const rawTracks = album.items ?? []
+  // /album/ returns items as [{item: RawTrack, type: "track"}, ...]; unwrap.
+  const rawTracks = (album.items ?? [])
+    .map((entry): RawTrack | null => {
+      if (entry && typeof entry === 'object' && 'item' in entry) {
+        return (entry as { item: RawTrack }).item
+      }
+      return entry as RawTrack
+    })
+    .filter((t): t is RawTrack => !!t && !!t.id)
   return normalizeAlbum(album, rawTracks.map(normalizeTrack))
 }
 
@@ -352,19 +373,24 @@ export async function getArtistById(id: string): Promise<Artist | null> {
   const numericId = Number(id)
   if (!Number.isFinite(numericId)) return null
 
-  // Primary call — basic metadata.
-  const meta = await safeProxyFetch<ApiEnvelope<RawArtist>>('/artist/', {
-    id: numericId,
-  })
-  const base = meta?.data
+  // Primary call — HiFi proxy returns { version, artist, cover } (not the
+  // standard { version, data } envelope), so proxyFetch can't auto-unwrap.
+  const meta = await safeProxyFetch<{ artist?: RawArtist; cover?: string }>(
+    '/artist/',
+    { id: numericId },
+  )
+  const base = meta?.artist
   if (!base) return null
 
-  // Aggregate call — albums + top tracks. /artist/?f=1 returns
-  // { albums: [...], tracks: [...] }. skip_tracks=false preserves tracks.
-  const agg = await safeProxyFetch<{ albums?: RawAlbum[]; tracks?: RawTrack[] }>(
-    '/artist/',
-    { id: numericId, f: 1, skip_tracks: 'false' },
-  )
+  // Aggregate call — /artist/?f=<id> returns { version, albums: { items }, tracks: [] }.
+  const agg = await safeProxyFetch<{
+    albums?: { items?: RawAlbum[] } | RawAlbum[]
+    tracks?: RawTrack[]
+  }>('/artist/', { f: numericId })
+  const albumItems = Array.isArray(agg?.albums)
+    ? agg!.albums
+    : (agg?.albums?.items ?? [])
+  const trackItems = agg?.tracks ?? []
 
   return {
     id: String(base.id),
@@ -374,8 +400,8 @@ export async function getArtistById(id: string): Promise<Artist | null> {
     coverUrl: tidalArtistImage(base.picture, 1280),
     bio: undefined,
     isVerified: false,
-    topTracks: (agg?.tracks ?? []).slice(0, 10).map(normalizeTrack),
-    albums: (agg?.albums ?? []).map((a) => normalizeAlbum(a)),
+    topTracks: trackItems.slice(0, 10).map(normalizeTrack),
+    albums: albumItems.map((a) => normalizeAlbum(a)),
     source: 'tidal',
   }
 }
@@ -390,14 +416,11 @@ export async function getRecommendations(
 ): Promise<MusicItem[]> {
   const numericId = Number(seedTrackId)
   if (!Number.isFinite(numericId)) return []
-  const data = await safeProxyFetch<
-    ApiEnvelope<{ items?: RawTrack[] }> | { items?: RawTrack[] }
-  >('/recommendations/', { id: numericId, limit })
-  const items =
-    (data as ApiEnvelope<{ items?: RawTrack[] }>)?.data?.items ??
-    (data as { items?: RawTrack[] })?.items ??
-    []
-  return items.map(normalizeTrack).map(trackToMusicItem)
+  const data = await safeProxyFetch<{ items?: RawTrack[] }>(
+    '/recommendations/',
+    { id: numericId, limit },
+  )
+  return (data?.items ?? []).map(normalizeTrack).map(trackToMusicItem)
 }
 
 // Artists related to the given artist id.
@@ -407,26 +430,20 @@ export async function getSimilarArtists(
 ): Promise<MusicItem[]> {
   const numericId = Number(artistId)
   if (!Number.isFinite(numericId)) return []
-  const data = await safeProxyFetch<
-    ApiEnvelope<{ items?: RawArtist[] }> | { items?: RawArtist[] }
-  >('/artist/similar/', { id: numericId, limit })
-  const items =
-    (data as ApiEnvelope<{ items?: RawArtist[] }>)?.data?.items ??
-    (data as { items?: RawArtist[] })?.items ??
-    []
-  return items.map(artistToMusicItem)
+  const data = await safeProxyFetch<{ items?: RawArtist[] }>(
+    '/artist/similar/',
+    { id: numericId, limit },
+  )
+  return (data?.items ?? []).map(artistToMusicItem)
 }
 
 // ---------- playback: resolve the actual CDN stream URL ----------
 
 interface TidalPlaybackResponse {
-  version?: string
-  data?: {
-    trackId?: number
-    manifestMimeType?: string
-    manifest?: string // base64
-    audioQuality?: StreamQuality
-  }
+  trackId?: number
+  manifestMimeType?: string
+  manifest?: string // base64
+  audioQuality?: StreamQuality
 }
 
 interface DecodedManifest {
@@ -468,11 +485,10 @@ export async function resolveStream(
   const numericId = Number(trackId)
   if (!Number.isFinite(numericId)) return null
 
-  const data = await safeProxyFetch<TidalPlaybackResponse>('/track/', {
+  const payload = await safeProxyFetch<TidalPlaybackResponse>('/track/', {
     id: numericId,
     quality,
   })
-  const payload = data?.data
   if (!payload?.manifest) return null
 
   // Only the BTS mime type (plain urls[]) is playable in <audio>.
