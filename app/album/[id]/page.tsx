@@ -1,11 +1,12 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ExternalLink, Clock, Music } from 'lucide-react'
+import { Clock, Music } from 'lucide-react'
 import { Header } from '@/components/header'
 import { TrackRow } from '@/components/track-row'
 import { getAlbumById } from '@/lib/music-api'
-import { Button } from '@/components/ui/button'
 
 interface AlbumPageProps {
   params: Promise<{ id: string }>
@@ -15,10 +16,7 @@ function formatTotalDuration(tracks: { duration?: number }[]): string {
   const totalSeconds = tracks.reduce((acc, track) => acc + (track.duration || 0), 0)
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
-  
-  if (hours > 0) {
-    return `${hours} hr ${minutes} min`
-  }
+  if (hours > 0) return `${hours} hr ${minutes} min`
   return `${minutes} min`
 }
 
@@ -26,35 +24,40 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
   const { id } = await params
   const album = await getAlbumById(id)
 
-  if (!album) {
-    notFound()
-  }
+  if (!album) notFound()
 
   const totalDuration = formatTotalDuration(album.tracks)
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-28">
       <Header />
 
       <main>
         {/* Album Header */}
-        <div className="bg-gradient-to-b from-secondary/50 to-background">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-gradient-to-b from-primary/15 via-secondary/40 to-background">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
             <div className="flex flex-col md:flex-row gap-8 items-start md:items-end">
-              {/* Album Artwork */}
-              <div className="relative h-56 w-56 md:h-64 md:w-64 flex-shrink-0 overflow-hidden rounded-lg shadow-2xl">
-                <Image
-                  src={album.artworkUrl}
-                  alt={album.name}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+              <div className="relative h-56 w-56 md:h-64 md:w-64 flex-shrink-0 overflow-hidden rounded-xl shadow-2xl ring-1 ring-border/60 bg-muted">
+                {album.artworkUrl ? (
+                  <Image
+                    src={album.artworkUrl}
+                    alt={album.name}
+                    fill
+                    className="object-cover"
+                    priority
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Music className="h-16 w-16 text-muted-foreground" />
+                  </div>
+                )}
               </div>
 
-              {/* Album Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Album</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">
+                  Album
+                </p>
                 <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 text-balance">
                   {album.name}
                 </h1>
@@ -75,6 +78,14 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
                     <Clock className="h-4 w-4" />
                     {totalDuration}
                   </span>
+                  {album.isHiRes && (
+                    <>
+                      <span>•</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-semibold tracking-wide">
+                        HI-RES
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {album.description && (
@@ -82,21 +93,6 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
                     {album.description}
                   </p>
                 )}
-
-                {/* Actions */}
-                <div className="mt-6 flex items-center gap-4">
-                  <Button asChild variant="outline">
-                    <a
-                      href={`https://audius.co/playlists/${album.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2"
-                    >
-                      View on Audius
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
@@ -104,7 +100,7 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
 
         {/* Track List */}
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="rounded-lg bg-secondary/30 divide-y divide-border">
+          <div className="rounded-xl bg-secondary/30 divide-y divide-border ring-1 ring-border/40">
             {album.tracks.length > 0 ? (
               album.tracks.map((track, index) => (
                 <TrackRow
