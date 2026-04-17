@@ -107,12 +107,12 @@ export default async function ArtistPage({ params }: ArtistPageProps) {
           <div className="mb-8">
             <Button asChild variant="outline">
               <a
-                href={`https://audius.co/${artist.handle || artist.id}`}
+                href={`https://tidal.com/browse/artist/${artist.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2"
               >
-                View on Audius
+                View on Tidal
                 <ExternalLink className="h-4 w-4" />
               </a>
             </Button>

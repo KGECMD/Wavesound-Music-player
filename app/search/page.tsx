@@ -126,7 +126,7 @@ function SearchPageContent() {
           <Search className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-xl font-semibold text-foreground mb-2">Search for Music</h2>
           <p className="text-muted-foreground">
-            Find your favorite artists, tracks, and albums on Audius
+            Find your favorite artists, tracks, and albums across the Tidal Hi-Fi catalog
           </p>
         </div>
       )}
