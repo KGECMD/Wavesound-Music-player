@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { Play, Pause, Heart } from 'lucide-react'
+import Link from 'next/link'
+import { Heart, Pause, Play } from 'lucide-react'
 import { useAudioPlayer } from './audio-player-provider'
 import { useFavorites } from '@/hooks/use-favorites'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ interface TrackRowProps {
   track: Track
   index?: number
   showArtwork?: boolean
+  queue?: Track[]
 }
 
 function formatDuration(seconds: number | undefined): string {
@@ -21,108 +23,93 @@ function formatDuration(seconds: number | undefined): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
-export function TrackRow({ track, index, showArtwork = true }: TrackRowProps) {
+export function TrackRow({ track, index, showArtwork = true, queue }: TrackRowProps) {
   const { currentTrack, isPlaying, play, pause } = useAudioPlayer()
   const { isFavorite, toggleFavorite } = useFavorites()
 
   const isCurrentTrack = currentTrack?.id === track.id
-  const canPlay = track.source === 'audius' && track.streamUrl
 
   const handlePlayClick = () => {
-    if (!canPlay) return
-
-    if (isCurrentTrack && isPlaying) {
-      pause()
-    } else {
-      play(track)
-    }
+    if (isCurrentTrack && isPlaying) pause()
+    else void play(track, queue)
   }
 
   return (
     <div
       className={cn(
         'group flex items-center gap-4 rounded-md px-4 py-2 transition-colors hover:bg-secondary/50',
-        isCurrentTrack && 'bg-secondary/50'
+        isCurrentTrack && 'bg-secondary/50',
       )}
     >
       {/* Track Number / Play Button */}
       <div className="w-8 flex-shrink-0 text-center relative">
-        {canPlay ? (
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePlayClick}
-              className="h-8 w-8 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              {isCurrentTrack && isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4 ml-0.5" />
-              )}
-            </Button>
-            <span
-              className={cn(
-                'text-sm text-muted-foreground group-hover:invisible',
-                isCurrentTrack && 'text-primary'
-              )}
-            >
-              {index !== undefined ? index + 1 : ''}
-            </span>
-          </>
-        ) : (
-          <span className="text-sm text-muted-foreground">
-            {index !== undefined ? index + 1 : ''}
-          </span>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handlePlayClick}
+          className="h-8 w-8 absolute inset-0 m-auto opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          {isCurrentTrack && isPlaying ? (
+            <Pause className="h-4 w-4" />
+          ) : (
+            <Play className="h-4 w-4 ml-0.5" />
+          )}
+        </Button>
+        <span
+          className={cn(
+            'text-sm text-muted-foreground group-hover:invisible',
+            isCurrentTrack && 'text-primary',
+          )}
+        >
+          {index !== undefined ? index + 1 : ''}
+        </span>
       </div>
 
-      {/* Artwork */}
       {showArtwork && (
         <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded">
-          <Image
-            src={track.artworkUrl}
-            alt={track.name}
-            fill
-            className="object-cover"
-          />
+          <Image src={track.artworkUrl} alt={track.name} fill className="object-cover" />
         </div>
       )}
 
-      {/* Track Info */}
       <div className="min-w-0 flex-1">
         <p
           className={cn(
             'truncate font-medium',
-            isCurrentTrack ? 'text-primary' : 'text-foreground'
+            isCurrentTrack ? 'text-primary' : 'text-foreground',
           )}
         >
           {track.name}
         </p>
-        <p className="truncate text-sm text-muted-foreground">{track.artistName}</p>
+        {track.artistId ? (
+          <Link
+            href={`/artist/${encodeURIComponent(track.artistId)}`}
+            className="truncate text-sm text-muted-foreground hover:text-primary transition-colors block"
+          >
+            {track.artistName}
+          </Link>
+        ) : (
+          <p className="truncate text-sm text-muted-foreground">{track.artistName}</p>
+        )}
       </div>
 
-      {/* Play count */}
-      {track.playCount !== undefined && (
-        <span className="hidden md:block text-sm text-muted-foreground flex-shrink-0">
-          {track.playCount.toLocaleString()} plays
+      {track.quality && (
+        <span className="hidden md:inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground uppercase tracking-wider">
+          {track.quality === 'HI_RES_LOSSLESS' ? 'Hi-Res' : track.quality === 'LOSSLESS' ? 'FLAC' : track.quality}
         </span>
       )}
 
-      {/* Favorite Button */}
       <Button
         variant="ghost"
         size="icon"
         onClick={() => toggleFavorite(track)}
         className={cn(
           'h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity',
-          isFavorite(track.id) && 'opacity-100 text-primary'
+          isFavorite(track.id) && 'opacity-100 text-primary',
         )}
       >
         <Heart className={cn('h-4 w-4', isFavorite(track.id) && 'fill-current')} />
       </Button>
 
-      {/* Duration */}
       <span className="w-12 text-right text-sm text-muted-foreground flex-shrink-0">
         {formatDuration(track.duration)}
       </span>

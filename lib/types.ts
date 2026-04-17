@@ -1,74 +1,28 @@
-// Audius API Types
-export interface AudiusUser {
-  id: string
-  handle: string
-  name: string
-  profile_picture?: {
-    '150x150'?: string
-    '480x480'?: string
-    '1000x1000'?: string
-  }
-  cover_photo?: {
-    '640x'?: string
-    '2000x'?: string
-  }
-  bio?: string
-  follower_count: number
-  followee_count: number
-  track_count: number
-  is_verified: boolean
+// Domain types for the music player. All IDs are serialized as strings for
+// React/URL convenience, even though the upstream Tidal proxy uses numbers.
+
+export type StreamQuality = 'LOW' | 'HIGH' | 'LOSSLESS' | 'HI_RES_LOSSLESS'
+
+export const QUALITY_LABELS: Record<StreamQuality, string> = {
+  LOW: 'Low (AAC 96)',
+  HIGH: 'High (AAC 320)',
+  LOSSLESS: 'Lossless (FLAC)',
+  HI_RES_LOSSLESS: 'Hi-Res (FLAC 24-bit)',
 }
 
-export interface AudiusTrack {
-  id: string
-  title: string
-  user: AudiusUser
-  artwork?: {
-    '150x150'?: string
-    '480x480'?: string
-    '1000x1000'?: string
-  }
-  description?: string
-  genre: string
-  mood?: string
-  duration: number
-  play_count: number
-  favorite_count: number
-  repost_count: number
-  permalink: string
-  is_streamable: boolean
-  release_date?: string
-}
+export type MusicSource = 'tidal'
 
-export interface AudiusPlaylist {
-  id: string
-  playlist_name: string
-  user: AudiusUser
-  artwork?: {
-    '150x150'?: string
-    '480x480'?: string
-    '1000x1000'?: string
-  }
-  description?: string
-  track_count: number
-  total_play_count: number
-  is_album: boolean
-  tracks?: AudiusTrack[]
-}
-
-// App Types
 export interface Track {
   id: string
   name: string
   artistName: string
   artistId: string
+  albumId?: string
   artworkUrl: string
-  streamUrl?: string
-  spotifyUri?: string
   duration?: number
-  playCount?: number
-  genre?: string
-  source: 'audius' | 'spotify'
+  explicit?: boolean
+  quality?: string // reported audio quality e.g. "LOSSLESS"
+  source: MusicSource
 }
 
 export interface Album {
@@ -79,8 +33,9 @@ export interface Album {
   artworkUrl: string
   trackCount: number
   tracks: Track[]
+  releaseDate?: string
   description?: string
-  source: 'audius' | 'spotify'
+  source: MusicSource
 }
 
 export interface Artist {
@@ -95,21 +50,25 @@ export interface Artist {
   isVerified?: boolean
   topTracks: Track[]
   albums: Album[]
-  source: 'audius' | 'spotify'
+  source: MusicSource
 }
 
 export interface MusicItem {
   id: string
-  type: 'track' | 'album' | 'artist'
+  type: 'track' | 'album' | 'artist' | 'playlist'
   name: string
   artistName: string
   artistId?: string
+  albumId?: string
   artworkUrl: string
-  streamUrl?: string
-  spotifyUri?: string
   duration?: number
-  playCount?: number
-  genre?: string
   trackCount?: number
-  source: 'audius' | 'spotify'
+  source: MusicSource
+}
+
+export interface StreamResolution {
+  url: string
+  mimeType: string
+  quality: StreamQuality
+  codecs?: string
 }
