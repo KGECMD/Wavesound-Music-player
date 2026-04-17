@@ -112,6 +112,7 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
                   track={track}
                   index={index}
                   showArtwork={false}
+                  queue={album.tracks}
                 />
               ))
             ) : (

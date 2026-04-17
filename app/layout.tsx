@@ -4,12 +4,15 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { AudioPlayerProvider } from '@/components/audio-player-provider'
 import { AudioPlayer } from '@/components/audio-player'
+import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from '@/components/ui/sonner'
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'SoundWave - Discover Music',
-  description: 'Discover new music, explore albums, and preview tracks from your favorite artists.',
+  title: 'Wavesound — Discover Music',
+  description:
+    'Discover new music, explore albums, and stream full tracks from your favorite artists.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -31,7 +34,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+  ],
 }
 
 export default function RootLayout({
@@ -40,12 +46,20 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <AudioPlayerProvider>
-          {children}
-          <AudioPlayer />
-        </AudioPlayerProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AudioPlayerProvider>
+            {children}
+            <AudioPlayer />
+          </AudioPlayerProvider>
+          <Toaster richColors closeButton />
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>
