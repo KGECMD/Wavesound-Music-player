@@ -147,12 +147,18 @@ export async function getUndergroundTrending(limit = 12): Promise<MusicItem[]> {
 
 export async function getAlbumById(id: string): Promise<Album | null> {
   if (isServer()) return serverGetAlbumById(id)
-  return clientJson<Album | null>(`/api/album/${encodeURIComponent(id)}`)
+  const res = await fetch(`/api/album/${encodeURIComponent(id)}`, { cache: 'no-store' })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+  return (await res.json()) as Album | null
 }
 
 export async function getArtistById(id: string): Promise<Artist | null> {
   if (isServer()) return serverGetArtistById(id)
-  return clientJson<Artist | null>(`/api/artist/${encodeURIComponent(id)}`)
+  const res = await fetch(`/api/artist/${encodeURIComponent(id)}`, { cache: 'no-store' })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+  return (await res.json()) as Artist | null
 }
 
 export async function getStreamUrl(id: string): Promise<string | null> {

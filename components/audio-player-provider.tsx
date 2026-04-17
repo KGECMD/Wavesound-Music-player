@@ -45,6 +45,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(0.7)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const loadTokenRef = useRef(0)
+  const loadingRef = useRef(false)
 
   useEffect(() => {
     audioRef.current = new Audio()
@@ -91,7 +92,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (!audioRef.current) return
 
       // Already playing this track — just resume.
+      // Skip the resume path if the source hasn't been set yet (initial load in progress);
+      // the pending fetch below will finish and start playback on its own.
       if (currentTrack?.id === track.id) {
+        if (loadingRef.current) return
         try {
           await audioRef.current.play()
           setIsPlaying(true)
@@ -101,6 +105,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
         return
       }
 
+      loadingRef.current = true
       setIsLoading(true)
       setCurrentTrack(track)
       setProgress(0)
@@ -128,6 +133,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (token !== loadTokenRef.current) return
 
       if (!streamUrl) {
+        loadingRef.current = false
         setIsLoading(false)
         setIsPlaying(false)
         console.error('No stream URL available for track', track.id)
@@ -135,6 +141,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       }
 
       audioRef.current.src = streamUrl
+      loadingRef.current = false
       try {
         await audioRef.current.play()
         setIsPlaying(true)
