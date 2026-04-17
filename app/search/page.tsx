@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Header } from '@/components/header'
 import { MusicGrid } from '@/components/music-grid'
@@ -10,7 +10,7 @@ import { searchMusic, getTrendingTracks, AUDIUS_GENRES } from '@/lib/music-api'
 import type { MusicItem } from '@/lib/types'
 import { Search } from 'lucide-react'
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
   const genre = searchParams.get('genre') || ''
@@ -135,5 +135,26 @@ export default function SearchPage() {
         )}
       </main>
     </div>
+  )
+}
+
+function SearchPageFallback() {
+  return (
+    <div className="min-h-screen bg-background pb-24">
+      <Header />
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col items-center justify-center py-20">
+          <Spinner className="h-10 w-10 text-primary" />
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<SearchPageFallback />}>
+      <SearchPageContent />
+    </Suspense>
   )
 }
