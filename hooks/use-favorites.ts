@@ -1,57 +1,52 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  addFavorite as dbAdd,
+  listFavorites as dbList,
+  removeFavorite as dbRemove,
+} from '@/lib/library-db'
 import type { Track } from '@/lib/types'
-
-const FAVORITES_KEY = 'soundwave-favorites'
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<Track[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
-    const stored = localStorage.getItem(FAVORITES_KEY)
-    if (stored) {
-      try {
-        setFavorites(JSON.parse(stored))
-      } catch {
-        setFavorites([])
-      }
-    }
-    setIsLoaded(true)
+    void (async () => {
+      const list = await dbList()
+      setFavorites(list)
+      setIsLoaded(true)
+    })()
   }, [])
-
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites))
-    }
-  }, [favorites, isLoaded])
 
   const addFavorite = useCallback((track: Track) => {
     setFavorites((prev) => {
       if (prev.some((f) => f.id === track.id)) return prev
+      void dbAdd(track)
       return [...prev, track]
     })
   }, [])
 
   const removeFavorite = useCallback((trackId: string) => {
-    setFavorites((prev) => prev.filter((f) => f.id !== trackId))
+    setFavorites((prev) => {
+      if (!prev.some((f) => f.id === trackId)) return prev
+      void dbRemove(trackId)
+      return prev.filter((f) => f.id !== trackId)
+    })
   }, [])
 
   const isFavorite = useCallback(
     (trackId: string) => favorites.some((f) => f.id === trackId),
-    [favorites]
+    [favorites],
   )
 
   const toggleFavorite = useCallback(
     (track: Track) => {
-      if (isFavorite(track.id)) {
-        removeFavorite(track.id)
-      } else {
-        addFavorite(track)
-      }
+      if (isFavorite(track.id)) removeFavorite(track.id)
+      else addFavorite(track)
     },
-    [isFavorite, addFavorite, removeFavorite]
+    [isFavorite, addFavorite, removeFavorite],
   )
 
   return {

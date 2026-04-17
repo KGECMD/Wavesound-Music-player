@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Play, Pause, Heart } from 'lucide-react'
+import { Heart, Pause, Play } from 'lucide-react'
 import { useAudioPlayer } from './audio-player-provider'
 import { useFavorites } from '@/hooks/use-favorites'
 import { Button } from '@/components/ui/button'
@@ -18,31 +18,26 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
   const { currentTrack, isPlaying, play, pause } = useAudioPlayer()
   const { isFavorite, toggleFavorite } = useFavorites()
 
-  const isCurrentTrack = currentTrack?.id === item.id
   const isTrack = item.type === 'track'
-  const canPlay = isTrack && item.source === 'audius' && item.streamUrl
+  const isCurrentTrack = isTrack && currentTrack?.id === item.id
 
   const track: Track = {
     id: item.id,
     name: item.name,
     artistName: item.artistName,
     artistId: item.artistId || '',
+    albumId: item.albumId,
     artworkUrl: item.artworkUrl,
-    streamUrl: item.streamUrl,
     duration: item.duration,
-    source: item.source,
+    source: 'tidal',
   }
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!canPlay) return
-
-    if (isCurrentTrack && isPlaying) {
-      pause()
-    } else {
-      play(track)
-    }
+    if (!isTrack) return
+    if (isCurrentTrack && isPlaying) pause()
+    else void play(track)
   }
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -53,16 +48,22 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
 
   const href =
     item.type === 'album'
-      ? `/album/${item.id}`
+      ? `/album/${encodeURIComponent(item.id)}`
       : item.type === 'artist'
-        ? `/artist/${item.artistId || item.id}`
-        : `/artist/${item.artistId}`
+        ? `/artist/${encodeURIComponent(item.artistId || item.id)}`
+        : `/artist/${encodeURIComponent(item.artistId || '')}`
+
+  const isArtist = item.type === 'artist'
 
   return (
     <Link href={href} className="group block">
-      <div className="relative overflow-hidden rounded-lg bg-secondary/50 p-4 transition-all duration-300 hover:bg-secondary">
-        {/* Artwork */}
-        <div className="relative aspect-square mb-4 overflow-hidden rounded-md shadow-lg">
+      <div className="relative overflow-hidden rounded-lg bg-secondary/30 p-4 transition-all duration-300 hover:bg-secondary/70">
+        <div
+          className={cn(
+            'relative aspect-square mb-4 overflow-hidden shadow-lg',
+            isArtist ? 'rounded-full' : 'rounded-md',
+          )}
+        >
           <Image
             src={item.artworkUrl}
             alt={item.name}
@@ -71,40 +72,38 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           />
 
-          {/* Play Button Overlay */}
-          {canPlay && (
+          {isTrack && (
             <div
               className={cn(
-                'absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity duration-200',
-                isCurrentTrack && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                'absolute inset-0 flex items-end justify-end p-3 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity duration-200',
+                isCurrentTrack && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
               )}
             >
               <Button
                 size="icon"
                 onClick={handlePlayClick}
-                className="h-12 w-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-110 transition-transform shadow-xl"
+                className="h-11 w-11 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-110 transition-transform shadow-xl"
               >
                 {isCurrentTrack && isPlaying ? (
-                  <Pause className="h-6 w-6" />
+                  <Pause className="h-5 w-5" />
                 ) : (
-                  <Play className="h-6 w-6 ml-1" />
+                  <Play className="h-5 w-5 ml-0.5" />
                 )}
               </Button>
             </div>
           )}
         </div>
 
-        {/* Info */}
         <div className="min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <h3 className="truncate font-semibold text-foreground">{item.name}</h3>
-              {showArtist && (
+              {showArtist && !isArtist && (
                 <p className="truncate text-sm text-muted-foreground">{item.artistName}</p>
               )}
-              {item.playCount !== undefined && (
+              {item.trackCount !== undefined && item.type === 'album' && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  {item.playCount.toLocaleString()} plays
+                  {item.trackCount} tracks
                 </p>
               )}
             </div>
@@ -115,7 +114,7 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
                 onClick={handleFavoriteClick}
                 className={cn(
                   'h-8 w-8 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity',
-                  isFavorite(item.id) && 'opacity-100 text-primary'
+                  isFavorite(item.id) && 'opacity-100 text-primary',
                 )}
               >
                 <Heart

@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect, useCallback } from 'react'
-import { Search, Music, Heart } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { ChevronLeft, ChevronRight, Heart, Music, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
@@ -12,12 +12,8 @@ export function Header() {
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedTerm, setDebouncedTerm] = useState('')
 
-  // Debounce search input
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedTerm(searchTerm)
-    }, 300)
-
+    const timer = setTimeout(() => setDebouncedTerm(searchTerm), 300)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
@@ -28,10 +24,9 @@ export function Header() {
         router.push(`/search?q=${encodeURIComponent(debouncedTerm.trim())}`)
       }
     },
-    [debouncedTerm, router]
+    [debouncedTerm, router],
   )
 
-  // Auto-search on debounced term change
   useEffect(() => {
     if (debouncedTerm.trim()) {
       router.push(`/search?q=${encodeURIComponent(debouncedTerm.trim())}`)
@@ -39,18 +34,35 @@ export function Header() {
   }, [debouncedTerm, router])
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center gap-3">
+          <div className="hidden md:flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-secondary/60"
+              onClick={() => router.back()}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-secondary/60"
+              onClick={() => router.forward()}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Link href="/" className="flex md:hidden items-center gap-2 flex-shrink-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
               <Music className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="hidden sm:block text-xl font-bold text-foreground">SoundWave</span>
+            <span className="text-lg font-bold">Wavesound</span>
           </Link>
 
-          {/* Search */}
           <form onSubmit={handleSearch} className="flex-1 max-w-xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -64,11 +76,10 @@ export function Header() {
             </div>
           </form>
 
-          {/* Favorites Link */}
           <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
             <Link href="/favorites">
               <Heart className="h-5 w-5" />
-              <span className="sr-only">Favorites</span>
+              <span className="sr-only">Liked Songs</span>
             </Link>
           </Button>
         </div>
