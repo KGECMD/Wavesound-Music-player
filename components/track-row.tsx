@@ -12,6 +12,12 @@ interface TrackRowProps {
   track: Track
   index?: number
   showArtwork?: boolean
+  /**
+   * Optional surrounding track list. When the user presses play, the whole
+   * list becomes the playback queue so that "next" advances to the following
+   * row instead of stopping.
+   */
+  queue?: Track[]
 }
 
 function formatDuration(seconds: number | undefined): string {

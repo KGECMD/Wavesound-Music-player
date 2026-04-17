@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Search, Music, Heart } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export function Header() {
   const router = useRouter()

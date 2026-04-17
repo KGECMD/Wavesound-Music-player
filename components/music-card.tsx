@@ -12,17 +12,16 @@ import { cn } from '@/lib/utils'
 interface MusicCardProps {
   item: MusicItem
   showArtist?: boolean
+  /**
+   * Optional surrounding track list. When the user presses play, the whole
+   * list becomes the playback queue so that "next" advances to the following
+   * card instead of stopping.
+   */
+  queue?: MusicItem[]
 }
 
-export function MusicCard({ item, showArtist = true }: MusicCardProps) {
-  const { currentTrack, isPlaying, play, pause } = useAudioPlayer()
-  const { isFavorite, toggleFavorite } = useFavorites()
-
-  const isCurrentTrack = currentTrack?.id === item.id
-  const isTrack = item.type === 'track'
-  const canPlay = isTrack && item.source === 'audius' && item.streamUrl
-
-  const track: Track = {
+function musicItemToTrack(item: MusicItem): Track {
+  return {
     id: item.id,
     name: item.name,
     artistName: item.artistName,
@@ -32,6 +31,17 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
     duration: item.duration,
     source: item.source,
   }
+}
+
+export function MusicCard({ item, showArtist = true, queue }: MusicCardProps) {
+  const { currentTrack, isPlaying, play, pause } = useAudioPlayer()
+  const { isFavorite, toggleFavorite } = useFavorites()
+
+  const isCurrentTrack = currentTrack?.id === item.id
+  const isTrack = item.type === 'track'
+  const canPlay = isTrack && item.source === 'audius' && !!item.streamUrl
+
+  const track = musicItemToTrack(item)
 
   const handlePlayClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -41,7 +51,18 @@ export function MusicCard({ item, showArtist = true }: MusicCardProps) {
     if (isCurrentTrack && isPlaying) {
       pause()
     } else {
-      play(track)
+      if (queue && queue.length > 0) {
+        const playableQueue = queue
+          .filter((q) => q.type === 'track' && q.source === 'audius' && !!q.streamUrl)
+          .map(musicItemToTrack)
+        const startIndex = playableQueue.findIndex((t) => t.id === item.id)
+        play(track, {
+          queue: playableQueue,
+          startIndex: startIndex >= 0 ? startIndex : 0,
+        })
+      } else {
+        play(track)
+      }
     }
   }
 

@@ -124,7 +124,12 @@ export default async function ArtistPage({ params }: ArtistPageProps) {
               <SectionHeader title="Popular Tracks" />
               <div className="rounded-lg bg-secondary/30 divide-y divide-border">
                 {artist.topTracks.map((track, index) => (
-                  <TrackRow key={track.id} track={track} index={index} />
+                  <TrackRow
+                    key={track.id}
+                    track={track}
+                    index={index}
+                    queue={artist.topTracks}
+                  />
                 ))}
               </div>
             </section>
