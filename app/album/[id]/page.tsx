@@ -87,12 +87,12 @@ export default async function AlbumPage({ params }: AlbumPageProps) {
                 <div className="mt-6 flex items-center gap-4">
                   <Button asChild variant="outline">
                     <a
-                      href={`https://audius.co/playlists/${album.id}`}
+                      href={`https://tidal.com/browse/album/${album.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2"
                     >
-                      View on Audius
+                      View on Tidal
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </Button>

@@ -56,11 +56,11 @@ export default function HomePage() {
         <section className="mb-12">
           <div className="rounded-2xl bg-gradient-to-br from-primary/20 via-secondary to-secondary/50 p-8 md:p-12">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 text-balance">
-              Stream Full Songs, Free
+              Browse Hi-Fi Music
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl text-pretty">
-              Discover independent artists on Audius. Stream full tracks for free, no subscriptions required.
-              Support the artists you love directly.
+              Search the Tidal catalog via the Monochrome Hi-Fi API. Explore trending playlists,
+              albums, and artists in lossless quality metadata — all without an account.
             </p>
             <div className="flex flex-wrap gap-2 mt-6">
               {AUDIUS_GENRES.slice(0, 8).map((genre) => (

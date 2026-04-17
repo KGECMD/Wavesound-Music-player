@@ -68,7 +68,7 @@ export interface Track {
   duration?: number
   playCount?: number
   genre?: string
-  source: 'audius' | 'spotify'
+  source: 'audius' | 'spotify' | 'hifi'
 }
 
 export interface Album {
@@ -80,7 +80,7 @@ export interface Album {
   trackCount: number
   tracks: Track[]
   description?: string
-  source: 'audius' | 'spotify'
+  source: 'audius' | 'spotify' | 'hifi'
 }
 
 export interface Artist {
@@ -95,7 +95,7 @@ export interface Artist {
   isVerified?: boolean
   topTracks: Track[]
   albums: Album[]
-  source: 'audius' | 'spotify'
+  source: 'audius' | 'spotify' | 'hifi'
 }
 
 export interface MusicItem {
@@ -111,5 +111,5 @@ export interface MusicItem {
   playCount?: number
   genre?: string
   trackCount?: number
-  source: 'audius' | 'spotify'
+  source: 'audius' | 'spotify' | 'hifi'
 }
