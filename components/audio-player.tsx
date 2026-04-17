@@ -49,7 +49,7 @@ export function AudioPlayer() {
             {/* Audius badge */}
             {currentTrack.source === 'audius' && (
               <a 
-                href={`https://audius.co/tracks/${currentTrack.id}`}
+                href={`https://audius.co/tracks/${encodeURIComponent(currentTrack.id)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"

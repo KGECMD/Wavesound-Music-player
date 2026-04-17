@@ -107,7 +107,7 @@ export default async function ArtistPage({ params }: ArtistPageProps) {
           <div className="mb-8">
             <Button asChild variant="outline">
               <a
-                href={`https://audius.co/${artist.handle || artist.id}`}
+                href={`https://audius.co/${encodeURIComponent(artist.handle || artist.id)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2"
