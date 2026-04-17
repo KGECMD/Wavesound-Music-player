@@ -48,7 +48,7 @@ export function Header() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
               <Music className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="hidden sm:block text-xl font-bold text-foreground">SoundWave</span>
+            <span className="hidden sm:block text-xl font-bold text-foreground">Wavesound</span>
           </Link>
 
           {/* Search */}
@@ -65,13 +65,16 @@ export function Header() {
             </div>
           </form>
 
-          {/* Favorites Link */}
-          <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
-            <Link href="/favorites">
-              <Heart className="h-5 w-5" />
-              <span className="sr-only">Favorites</span>
-            </Link>
-          </Button>
+          {/* Right-side actions */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/favorites">
+                <Heart className="h-5 w-5" />
+                <span className="sr-only">Favorites</span>
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </header>
