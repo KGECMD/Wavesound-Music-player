@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Dark mode by default - Spotify-inspired */
+  /* Dark theme palette tuned for Wavesound */
   --background: oklch(0.07 0 0);
   --foreground: oklch(0.98 0 0);
   --card: oklch(0.12 0 0);

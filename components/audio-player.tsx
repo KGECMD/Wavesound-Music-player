@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Play, Pause, Volume2, VolumeX, ExternalLink } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, Music as MusicIcon } from 'lucide-react'
 import { useAudioPlayer } from './audio-player-provider'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
@@ -16,47 +16,64 @@ function formatTime(seconds: number): string {
 }
 
 export function AudioPlayer() {
-  const { currentTrack, isPlaying, isLoading, progress, duration, volume, togglePlay, seek, setVolume } =
-    useAudioPlayer()
+  const {
+    currentTrack,
+    isPlaying,
+    isLoading,
+    progress,
+    duration,
+    volume,
+    togglePlay,
+    seek,
+    setVolume,
+  } = useAudioPlayer()
 
   if (!currentTrack) return null
 
   const trackDuration = duration || currentTrack.duration || 0
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-50 shadow-[0_-8px_32px_rgba(0,0,0,0.35)]">
       <div className="mx-auto max-w-7xl px-4 py-3">
         <div className="flex items-center gap-4">
           {/* Track Info */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md">
-              <Image
-                src={currentTrack.artworkUrl}
-                alt={currentTrack.name}
-                fill
-                className="object-cover"
-              />
+            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md ring-1 ring-border/60">
+              {currentTrack.artworkUrl ? (
+                <Image
+                  src={currentTrack.artworkUrl}
+                  alt={currentTrack.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full bg-secondary flex items-center justify-center">
+                  <MusicIcon className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{currentTrack.name}</p>
-              <Link 
-                href={`/artist/${currentTrack.artistId}`}
-                className="truncate text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                {currentTrack.artistName}
-              </Link>
+              <p className="truncate text-sm font-medium text-foreground">
+                {currentTrack.name}
+              </p>
+              {currentTrack.artistId ? (
+                <Link
+                  href={`/artist/${currentTrack.artistId}`}
+                  className="truncate text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {currentTrack.artistName}
+                </Link>
+              ) : (
+                <p className="truncate text-xs text-muted-foreground">
+                  {currentTrack.artistName}
+                </p>
+              )}
             </div>
-            {/* Audius badge */}
-            {currentTrack.source === 'audius' && (
-              <a 
-                href={`https://audius.co/tracks/${currentTrack.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-              >
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary">AUDIUS</span>
-                <ExternalLink className="h-3 w-3" />
-              </a>
+            {currentTrack.isHiRes && (
+              <span className="hidden sm:inline-flex text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-semibold tracking-wide">
+                HI-RES
+              </span>
             )}
           </div>
 
@@ -78,7 +95,7 @@ export function AudioPlayer() {
               )}
             </Button>
             <div className="flex items-center gap-2 w-full">
-              <span className="text-xs text-muted-foreground w-10 text-right">
+              <span className="text-xs text-muted-foreground w-10 text-right tabular-nums">
                 {formatTime(progress)}
               </span>
               <Slider
@@ -88,7 +105,7 @@ export function AudioPlayer() {
                 onValueChange={([value]) => seek(value)}
                 className="flex-1"
               />
-              <span className="text-xs text-muted-foreground w-10">
+              <span className="text-xs text-muted-foreground w-10 tabular-nums">
                 {formatTime(trackDuration)}
               </span>
             </div>

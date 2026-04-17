@@ -1,6 +1,14 @@
 'use client'
 
-import { createContext, useContext, useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from 'react'
 import type { Track } from '@/lib/types'
 
 interface AudioPlayerContextType {
@@ -36,35 +44,23 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0)
   const [volume, setVolumeState] = useState(0.7)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const loadTokenRef = useRef(0)
 
   useEffect(() => {
     audioRef.current = new Audio()
     audioRef.current.volume = volume
-    audioRef.current.crossOrigin = 'anonymous'
+    audioRef.current.preload = 'auto'
 
     const audio = audioRef.current
 
-    const handleTimeUpdate = () => {
-      setProgress(audio.currentTime)
-    }
-
-    const handleDurationChange = () => {
-      setDuration(audio.duration || 0)
-    }
-
+    const handleTimeUpdate = () => setProgress(audio.currentTime)
+    const handleDurationChange = () => setDuration(audio.duration || 0)
     const handleEnded = () => {
       setIsPlaying(false)
       setProgress(0)
     }
-
-    const handleCanPlay = () => {
-      setIsLoading(false)
-    }
-
-    const handleWaiting = () => {
-      setIsLoading(true)
-    }
-
+    const handleCanPlay = () => setIsLoading(false)
+    const handleWaiting = () => setIsLoading(true)
     const handleError = () => {
       setIsLoading(false)
       setIsPlaying(false)
@@ -87,28 +83,68 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener('error', handleError)
       audio.pause()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const play = useCallback((track: Track) => {
-    if (!audioRef.current) return
-    
-    // Audius tracks have streamUrl
-    if (track.source === 'audius' && track.streamUrl) {
-      if (currentTrack?.id !== track.id) {
-        setIsLoading(true)
-        audioRef.current.src = track.streamUrl
-        setCurrentTrack(track)
-        setProgress(0)
-        setDuration(track.duration || 0)
+  const play = useCallback(
+    async (track: Track) => {
+      if (!audioRef.current) return
+
+      // Already playing this track — just resume.
+      if (currentTrack?.id === track.id) {
+        try {
+          await audioRef.current.play()
+          setIsPlaying(true)
+        } catch (err) {
+          console.error('Play error:', err)
+        }
+        return
       }
-      
-      audioRef.current.play().catch((err) => {
+
+      setIsLoading(true)
+      setCurrentTrack(track)
+      setProgress(0)
+      setDuration(track.duration || 0)
+
+      const token = ++loadTokenRef.current
+
+      // If the track already has a resolved streamUrl (from search), use it directly.
+      let streamUrl: string | null | undefined = track.streamUrl
+      if (!streamUrl) {
+        try {
+          const res = await fetch(`/api/stream?id=${encodeURIComponent(track.id)}`, {
+            cache: 'no-store',
+          })
+          if (res.ok) {
+            const data = (await res.json()) as { url: string | null }
+            streamUrl = data.url
+          }
+        } catch (err) {
+          console.error('Stream URL fetch error:', err)
+        }
+      }
+
+      // If the user started a different track while we were resolving, bail out.
+      if (token !== loadTokenRef.current) return
+
+      if (!streamUrl) {
+        setIsLoading(false)
+        setIsPlaying(false)
+        console.error('No stream URL available for track', track.id)
+        return
+      }
+
+      audioRef.current.src = streamUrl
+      try {
+        await audioRef.current.play()
+        setIsPlaying(true)
+      } catch (err) {
         console.error('Play error:', err)
         setIsLoading(false)
-      })
-      setIsPlaying(true)
-    }
-  }, [currentTrack?.id])
+      }
+    },
+    [currentTrack?.id],
+  )
 
   const pause = useCallback(() => {
     audioRef.current?.pause()

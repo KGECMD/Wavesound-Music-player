@@ -8,9 +8,10 @@ import { AudioPlayer } from '@/components/audio-player'
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: 'SoundWave - Discover Music',
-  description: 'Discover new music, explore albums, and preview tracks from your favorite artists.',
-  generator: 'v0.app',
+  title: 'Wavesound — Lossless Music Discovery',
+  description:
+    'Stream Hi-Res lossless music, explore albums and discover artists with Wavesound, powered by Monochrome and DAB.',
+  generator: 'Wavesound',
   icons: {
     icon: [
       {

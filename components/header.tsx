@@ -47,7 +47,7 @@ export function Header() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
               <Music className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="hidden sm:block text-xl font-bold text-foreground">SoundWave</span>
+            <span className="hidden sm:block text-xl font-bold tracking-tight text-foreground">Wavesound</span>
           </Link>
 
           {/* Search */}
