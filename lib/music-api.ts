@@ -104,6 +104,10 @@ async function serverGetAlbumById(id: string): Promise<Album | null> {
 }
 
 async function serverGetArtistById(id: string): Promise<Artist | null> {
+  if (id.startsWith('dab_')) {
+    const { dabGetArtist } = await import('./dab')
+    return dabGetArtist(id)
+  }
   const { monoGetArtist } = await import('./monochrome')
   return monoGetArtist(id)
 }

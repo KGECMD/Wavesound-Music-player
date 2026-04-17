@@ -327,13 +327,13 @@ function decodeManifestUrl(manifest: string): string | null {
       const parsed = JSON.parse(decoded)
       if (Array.isArray(parsed?.urls) && parsed.urls[0]) return parsed.urls[0]
     } catch {
-      const match = decoded.match(/https?:\/\/[^"\s]+/)
-      return match ? match[0] : null
+      // JSON parse failed — fall through to regex extraction.
     }
+    const match = decoded.match(/https?:\/\/[^"\s]+/)
+    return match ? match[0] : null
   } catch {
     return null
   }
-  return null
 }
 
 export async function monoGetStreamUrl(id: string, quality = 'LOSSLESS'): Promise<string | null> {
